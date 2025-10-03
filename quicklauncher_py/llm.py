@@ -18,6 +18,12 @@ except ImportError:
     AutoTokenizer = None  # type: ignore
     pipeline = None  # type: ignore
 
+# Torch is optional; if available we will use CUDA when detected.
+try:
+    import torch  # type: ignore
+except Exception:  # pragma: no cover - optional dependency
+    torch = None  # type: ignore
+
 # Global references to the model, tokenizer and generation pipeline.
 _MODEL = None  # type: ignore
 _TOKENIZER = None  # type: ignore
@@ -39,8 +45,9 @@ def load_model(model_name: str) -> None:
     # Load tokenizer and model from HuggingFace; trust_remote_code allows custom code from the repo.
     _TOKENIZER = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
     _MODEL = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
-    # Initialize a text-generation pipeline for convenience. Use device=-1 to force CPU usage.
-    _PIPELINE = pipeline("text-generation", model=_MODEL, tokenizer=_TOKENIZER, device=-1)
+    # Initialize a text-generation pipeline. Prefer CUDA if available.
+    device_id = 0 if (torch is not None and torch.cuda.is_available()) else -1
+    _PIPELINE = pipeline("text-generation", model=_MODEL, tokenizer=_TOKENIZER, device=device_id)
 
 
 def interpret_command(text: str) -> Optional[str]:
