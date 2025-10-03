@@ -91,6 +91,13 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+        # Initialize the local LLM (optional)
+    try:
+        llm.load_model("Qwen/Qwen2.5-0.5B")
+    except Exception as e:
+        print(f"Warning: failed to load LLM: {e}")
+
+
     app = QApplication([])
     window = MainWindow(index_dir=args.index_dir)
     window.show()
