@@ -4,10 +4,6 @@ Search engine integration for the Quick Launcher.
 This module provides a thin wrapper around a Whoosh index. It is responsible for
 creating the index if it does not exist, adding documents to the index, and
 performing search queries against the index.
-
-For now the engine is a minimal stub that simply returns placeholder values. You
-should expand the ``create_index`` and ``add_documents`` functions to crawl your
-filesystem or other sources and add real documents to the index.
 """
 
 from __future__ import annotations
@@ -66,6 +62,36 @@ class SearchEngine:
         os.makedirs(self.index_dir, exist_ok=True)
         self._ix = index.create_in(self.index_dir, self.default_schema())
 
+    def index_directory(self, directory: str) -> None:
+        """
+        Recursively index all files under the given directory. Each file is
+        indexed by its path and filename. File contents are not read to avoid
+        ingesting large binary blobs; if you wish to include textual content
+        you can extend this method to read the first few kilobytes of each
+        file.
+
+        If the index has not been created yet, this will raise a RuntimeError.
+
+        :param directory: The root directory to index.
+        """
+        if self._ix is None:
+            raise RuntimeError("Index has not been created. Call create_index() first.")
+
+        documents = []
+        for root, _, files in os.walk(directory):
+            for fname in files:
+                path = os.path.join(root, fname)
+                # Skip entries that are not regular files
+                if not os.path.isfile(path):
+                    continue
+                documents.append({
+                    'path': path,
+                    'title': fname,
+                    'content': ''
+                })
+        if documents:
+            self.add_documents(documents)
+
     def load_index(self) -> None:
         """
         Load an existing Whoosh index from the configured ``index_dir``. If it
@@ -77,14 +103,9 @@ class SearchEngine:
             )
         if self.index_dir is None:
             return
-        if not (self.index_dir / "MAIN_WRITELOCK").exists():
-            # Try to open the index if it exists
-            try:
-                self._ix = index.open_dir(self.index_dir)
-            except Exception:
-                self._ix = None
-        else:
-            # A lock file exists; do not try to open
+        try:
+            self._ix = index.open_dir(self.index_dir)
+        except Exception:
             self._ix = None
 
     def add_documents(self, documents: Iterable[dict]) -> None:
@@ -103,22 +124,27 @@ class SearchEngine:
             )
         writer.commit()
 
-    def search(self, query: str, limit: int = 10) -> List[str]:
-        """
-        Search the index for the given query string and return a list of formatted
-        result strings. If the index is not available, return a placeholder result.
+  
+      def search(self, query: str, limit: int = 10) -> Iterable[dict]:
+        """Search the index for the given query and return a list of dictionaries.
 
-        :param query: Search query text.
+        Each returned dict has 'title' and 'path' keys corresponding to the indexed file.
+        If the index is not available, an empty list is returned.
+
+        :param query: The search query string.
         :param limit: Maximum number of results to return.
-        :return: A list of result strings.
+        :return: A list of dictionaries with search results.
         """
-        if self._ix is None:
-            # No index available; return a stub response
-            return [f"(no index) You searched for: {query}"]
-
+        # If no index is loaded or whoosh is unavailable, return an empty list
+        if self._ix is None or index is None:
+            return []
+        # Use a MultifieldParser to search over title and path fields
         with self._ix.searcher() as searcher:
-            parser = MultifieldParser(["title", "content"], schema=self._ix.schema)
-            q = parser.parse(query)
+            parser = MultifieldParser(["title", "path"], schema=self._ix.schema)
+            try:
+                q = parser.parse(query)
+            except Exception:
+                return []
             results = searcher.search(q, limit=limit)
-            return [f"{r['title']} ({r['path']})" for r in results]
-
+            # Build a list of result dictionaries
+            return [{"title": hit.get("title", ""), "path": hit["path"]} for hit in results]
