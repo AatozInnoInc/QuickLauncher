@@ -123,9 +123,8 @@ class SearchEngine:
                 path=doc["path"], title=doc["title"], content=doc.get("content", "")
             )
         writer.commit()
-
-  
-      def search(self, query: str, limit: int = 10) -> Iterable[dict]:
+        
+    def search(self, query: str, limit: int = 10) -> Iterable[dict]:
         """Search the index for the given query and return a list of dictionaries.
 
         Each returned dict has 'title' and 'path' keys corresponding to the indexed file.
@@ -137,7 +136,7 @@ class SearchEngine:
         """
         # If no index is loaded or whoosh is unavailable, return an empty list
         if self._ix is None or index is None:
-            return []
+            return [f"(no index) You searched for: {query}"]
         # Use a MultifieldParser to search over title and path fields
         with self._ix.searcher() as searcher:
             parser = MultifieldParser(["title", "path"], schema=self._ix.schema)
