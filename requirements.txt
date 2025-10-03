@@ -1,0 +1,7 @@
+PySide6>=6.6.0
+whoosh>=2.7.4
+transformers>=4.37.0
+torch>=2.0.0
+# Optional dependencies for advanced features:
+sentence-transformers>=2.2.2
+faiss-cpu>=1.7.4
