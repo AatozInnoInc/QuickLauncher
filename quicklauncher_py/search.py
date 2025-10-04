@@ -38,6 +38,11 @@ class SearchEngine:
         if self.index_dir is not None:
             self.load_index()
 
+    @property
+    def has_index(self) -> bool:
+        """Return True if an index is loaded in memory."""
+        return self._ix is not None
+
     @staticmethod
     def default_schema() -> "Schema":
         """Return a basic schema for indexing commands and files."""
@@ -134,9 +139,10 @@ class SearchEngine:
         :param limit: Maximum number of results to return.
         :return: A list of dictionaries with search results.
         """
-        # If no index is loaded or whoosh is unavailable, return an empty list
+        # If no index is loaded or Whoosh is unavailable, return a placeholder result
+        # that matches the expected shape: a list of {title, path} objects.
         if self._ix is None or index is None:
-            return [f"(no index) You searched for: {query}"]
+            return [{"title": f"(no index) You searched for: {query}", "path": ""}]
         # Use a MultifieldParser to search over title and path fields
         with self._ix.searcher() as searcher:
             parser = MultifieldParser(["title", "path"], schema=self._ix.schema)

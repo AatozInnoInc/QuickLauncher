@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import platform
@@ -32,8 +33,11 @@ except Exception as e:
     print("LLM load failed:", e)
 
 @app.get("/search")
-async def search(query: str):
-    results = search_engine.search(query)
+async def search(query: Optional[str] = None, q: Optional[str] = None):
+    effective_query = query or q
+    if not effective_query:
+        raise HTTPException(status_code=400, detail="Missing 'query' or 'q' parameter")
+    results = search_engine.search(effective_query)
     return {"results": results}
 
 @app.get("/interpret")

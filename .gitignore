@@ -1,3 +1,31 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+*.log
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/.cargo/
+
+# OS / Editor
+.DS_Store
+.idea/
+.vscode/
+
+# Local logs
+backend-dev.log
+backend-dev.err
+frontend-dev.log
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

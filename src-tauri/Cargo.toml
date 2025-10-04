@@ -1,0 +1,20 @@
+[package]
+name = "quicklauncher-tauri"
+version = "0.1.0"
+description = "Quick Launcher Tauri shell"
+authors = ["QuickLauncher Maintainers"]
+license = "MIT"
+repository = ""
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "1", features = [] }
+
+[dependencies]
+tauri = { version = "1", features = ["global-shortcut", "shell-open"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+opt-level = 3
+
